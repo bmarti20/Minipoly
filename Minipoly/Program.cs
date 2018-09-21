@@ -15,7 +15,7 @@ namespace Minipoly
             rent = y;
             housePrice = z;
             position = pos;
-            owner = "test";
+            owner = "Unowned";
             color = col;
         }
         
