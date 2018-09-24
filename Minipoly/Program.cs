@@ -382,10 +382,28 @@ namespace Minipoly
                     if (Monopoly[i, 0].owner == player.name && Monopoly[i, 1].owner == player.name && Monopoly[i, 2].owner == player.name)
                     {
                         int choice = 0;
-                        Console.WriteLine("Which {0} property do you want to build a house on: {1}, {2}, or {3}? (1, 2, or 3)",
+                        Console.WriteLine("Which {0} property do you want to build a house on: {1}, {2}, or {3}? (1, 2, 3, or 0 to skip)",
                             Monopoly[i, 0].color, Monopoly[i, 0].name, Monopoly[i, 1].name, Monopoly[i, 2].name);
                         choice = int.Parse(Console.ReadLine());
-                        Monopoly[i, choice - 1].buildHouse(player);
+                        if (choice != 0)
+                            Monopoly[i, choice - 1].buildHouse(player);
+                    }
+                }
+            }
+        }
+
+        static void tradeProp(Player p1, Player p2)
+        {
+            Console.WriteLine("{0}, what property will you offer? ", p1.name);
+            int counter = 0;
+            for (int i = 0; i < 4; i++)
+            {
+                for (int j = 0; j < 3; j++)
+                {
+                    if (Monopoly[i, j].owner == p1.name)
+                    {
+                        counter++;
+                        Console.Write("{2}.) {0} ({1})\n", Monopoly[i, j].name, Monopoly[i, j].color, counter);
                     }
                 }
             }
