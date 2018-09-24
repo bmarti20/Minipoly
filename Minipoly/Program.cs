@@ -170,7 +170,7 @@ namespace Minipoly
 
         public static Property[,] Monopoly = new Property[4, 3];        // 2D array of Properties keeps track of monopolies
         
-
+        // Players 1 and 2, initialized as p1 and p2 with the constant STARTMONEY as their initial money
         public static Player p1 = new Player("p1", STARTMONEY);
         public static Player p2 = new Player("p2", STARTMONEY);
 
@@ -201,22 +201,23 @@ namespace Minipoly
 
             while (!gameover)       // Game will keep playing until one player is bankrupt
             {
+
+                Console.WriteLine();
+                roll(p1, p2);           // Calls roll function
                 if (p1.money <= 0)
                 {
                     Console.WriteLine("{0} has gone bankrupt. {1} wins!", p1.name, p2.name);
                     gameover = true;
+                    continue;
                 }
-                else if (p2.money <= 0)
+
+                Console.WriteLine();
+                roll(p2, p1);           // Calls roll function
+                if (p2.money <= 0)
                 {
                     Console.WriteLine("{0} has gone bankrupt. {1} wins!", p2.name, p1.name);
                     gameover = true;
                 }
-
-                Console.WriteLine();
-                roll(p1, p2);           // Calls roll function
-                Console.WriteLine();
-                roll(p2, p1);           // Calls roll function
-                
             }
         }
 
