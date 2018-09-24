@@ -5,7 +5,7 @@ namespace Minipoly
     class Property
     {
         public string name;
-        public int price, rent, housePrice, position;
+        public int price, rent, housePrice, position, numhouses;
         public string owner, color;
 
         public Property(string str, int x, int y, int z, int pos, string col)   // Constructor gets name, price, rent, house price, and position of properties. 
@@ -17,17 +17,43 @@ namespace Minipoly
             position = pos;
             owner = "Unowned";
             color = col;
+            numhouses = 0;
         }
         
+        public void buildHouse(Player player)
+        {
+            if (numhouses == 5)
+                Console.WriteLine("You have already built 4 houses and a Hotel, you cannot build any more.");
+            else if (player.money < housePrice)
+                Console.WriteLine("You don't have enough money.");
+            else
+            {
+                player.setMoney(-housePrice);
+                switch(numhouses)
+                {
+                    case 0: rent *= 2; player.houses++;  break;       // First House - Rent increases by 3x
+                    case 1: rent *= 2; player.houses++; break;       // Second House - Rent increases by 2x
+                    case 2: rent *= 3; player.houses++; break;       // Third House - Rent increases by 2x
+                    case 3: rent = rent * 3 / 2; player.houses++; break;   // Fourth House - Rent increases by 1.5x
+                    case 4: rent *= 2; player.hotels++; break;       // Hotel - Rent increases by 2x
+                    default: break;
+                }
+                numhouses++;
+                if (numhouses == 5)
+                    Console.WriteLine("You built a hotel on {0}! Rent is now ${1}.", name, rent);
+                else
+                    Console.WriteLine("You built a house on {0}! Rent is now ${1}.", name, rent);
+            }
+        }
     }
 
     class Player
     {
         public string name;
-        public int money, position, jailcounter, hotelsowned = 0;
+        public int money, position, jailcounter, houses, hotels;
         public bool injail, outofjailfree;
         public int[] propsowned = { 0, 0, 0, 0 };
-        public int[] housesowned = { 0, 0, 0, 0 };
+        public bool[] monopOwned = { false, false, false, false };
 
         public Player(string x, int y)   // Constructor that receives name and starting money. Sets initial position to 0
         {
@@ -35,14 +61,13 @@ namespace Minipoly
             money = y;
             position = 0;
             jailcounter = 0;
+            houses = 0;
+            hotels = 0;
             injail = false;
             outofjailfree = false;
         }
 
         // Getters: Return players money, position, and name
-        public int getMoney() { return money; }
-        public int getPosition() { return position; }
-        public string getName() { return name; }
 
         public void passGo()        // Prints out that player passed Go, adds $200 to money
         {
@@ -95,7 +120,7 @@ namespace Minipoly
             prop.owner = name;
             setMoney(-prop.price);
 
-            switch (prop.color)             // Updaates propsowned array with a property. 0 is blues, 1 is yellows, 2 is reds, 3 is greens
+            switch (prop.color)             // Updates propsowned array with a property. 0 is blues, 1 is yellows, 2 is reds, 3 is greens
             {
                 case "blue": propsowned[0]++; break;
                 case "yellow": propsowned[1]++; break;
@@ -143,18 +168,26 @@ namespace Minipoly
         public static Property carolina = new Property(tile[17], 340, 30, 200, 17, "green");
         public static Property pennsylvania = new Property(tile[19], 360, 32, 200, 18, "green");
 
+        public static Property[,] Monopoly = new Property[4, 3];        // 2D array of Properties keeps track of monopolies
+        
+
         public static Player p1 = new Player("p1", STARTMONEY);
         public static Player p2 = new Player("p2", STARTMONEY);
 
         static void Main(string[] args)
         {
+            Monopoly[0, 0] = oriental; Monopoly[0, 1] = vermont; Monopoly[0, 2] = connecticut;      // Blue Properties
+            Monopoly[1, 0] = stjames; Monopoly[1, 1] = tennessee; Monopoly[1, 2] = newyork;         // Yellow Properties
+            Monopoly[2, 0] = atlantic; Monopoly[2, 1] = ventnor; Monopoly[2, 2] = marvin;           // Red Properties
+            Monopoly[3, 0] = pacific; Monopoly[3, 1] = carolina; Monopoly[3, 2] = pennsylvania;     // Green Properties
+
             Console.WriteLine("Welcome to Mini-opoly!");
             Console.Write("Please enter Player 1 name: ");
             p1.name = Console.ReadLine();
-            Console.WriteLine("{0} has ${1}", p1.getName(), p1.getMoney());
+            Console.WriteLine("{0} has ${1}", p1.name, p1.money);
             Console.Write("Please enter Player 2 name: ");
             p2.name = Console.ReadLine();
-            Console.WriteLine("{0} has ${1}", p2.getName(), p2.getMoney());
+            Console.WriteLine("{0} has ${1}", p2.name, p2.money);
             Console.WriteLine("Press Enter to start the game!");
             Console.ReadKey();
 
@@ -168,21 +201,22 @@ namespace Minipoly
 
             while (!gameover)       // Game will keep playing until one player is bankrupt
             {
+                if (p1.money <= 0)
+                {
+                    Console.WriteLine("{0} has gone bankrupt. {1} wins!", p1.name, p2.name);
+                    gameover = true;
+                }
+                else if (p2.money <= 0)
+                {
+                    Console.WriteLine("{0} has gone bankrupt. {1} wins!", p2.name, p1.name);
+                    gameover = true;
+                }
+
                 Console.WriteLine();
                 roll(p1, p2);           // Calls roll function
                 Console.WriteLine();
                 roll(p2, p1);           // Calls roll function
-
-                if (p1.getMoney() <= 0)
-                {
-                    Console.WriteLine("{0} has gone bankrupt. {1} wins!", p1.getName(), p2.getName());
-                    gameover = true;
-                }
-                else if (p2.getMoney() <= 0)
-                {
-                    Console.WriteLine("{0} has gone bankrupt. {1} wins!", p2.getName(), p1.getName());
-                    gameover = true;
-                }
+                
             }
         }
 
@@ -192,44 +226,45 @@ namespace Minipoly
                 jailroll(p1, p2);
             else
             {
-                if (p1.monopoly())
-                {
-                    Console.Write("{0}, would you like to roll or buy houses? (r/h) ", p1.name);
-                    char choice = Convert.ToChar(Console.ReadLine());
+                char choice = ' ';
+                while (choice != 'r' && choice != 'R')
+                { 
+                    Console.Write("{0}, would you like to roll, list properties & money, or buy houses? (r/p/h) ", p1.name);
+                    choice = Convert.ToChar(Console.ReadLine());
                     switch (choice)
                     {
                         case 'r':           // Escapes to normal roll function
-                        case 'R':
-                            break;      
+                        case 'R': break;
                         case 'h':           // Buys a house on a property
-                        case 'H':
-                            break;
+                        case 'H': buyHouse(p1); break;
+                        case 'p':
+                        case 'P': listProps(p1); break;
                         default: Console.WriteLine("Error, invalid input."); break;
                     }
-                
                 }
+            
 
                 Console.WriteLine("{0} rolls!", p1.name);
                 Random rnd = new Random();
                 int die = rnd.Next(1, 7);       // Generates a random dice roll and updates the player's position
                 p1.setPosition(die);
-                Console.WriteLine("{0} rolled a {1} and landed on {2}. ", p1.getName(), die, tile[p1.getPosition()]);
+                Console.WriteLine("{0} rolled a {1} and landed on {2}. ", p1.name, die, tile[p1.position]);
             }
 
-            switch (p1.getPosition())       // Splits off into proper functions depending on what tile the player landed on
+            switch (p1.position)       // Splits off into proper functions depending on what tile the player landed on
             {
-                case 1: propLand(p1, p2, oriental); break;      // All Property tiles grouped together
-                case 2: propLand(p1, p2, vermont); break;
-                case 4: propLand(p1, p2, connecticut); break;
-                case 6: propLand(p1, p2, stjames); break;
-                case 7: propLand(p1, p2, tennessee); break;
-                case 9: propLand(p1, p2, newyork); break;
-                case 11: propLand(p1, p2, atlantic); break;
-                case 12: propLand(p1, p2, ventnor); break;
-                case 14: propLand(p1, p2, marvin); break;
-                case 16: propLand(p1, p2, pacific); break;
-                case 17: propLand(p1, p2, carolina); break;
-                case 19: propLand(p1, p2, pennsylvania); break;
+                case 1: propLand(p1, p2, Monopoly[0,0]); break;      // All Property tiles grouped together
+                case 2: propLand(p1, p2, Monopoly[0, 1]); break;
+                case 4: propLand(p1, p2, Monopoly[0, 2]); break;
+                case 6: propLand(p1, p2, Monopoly[1, 0]); break;
+                case 7: propLand(p1, p2, Monopoly[1, 1]); break;
+                case 9: propLand(p1, p2, Monopoly[1, 2]); break;
+                case 11: propLand(p1, p2, Monopoly[2, 0]); break;
+                case 12: propLand(p1, p2, Monopoly[2, 1]); break;
+                case 14: propLand(p1, p2, Monopoly[2, 2]); break;
+                case 16: propLand(p1, p2, Monopoly[3, 0]); break;
+                case 17: propLand(p1, p2, Monopoly[3, 1]); break;
+                case 19: propLand(p1, p2, Monopoly[3, 2]); break;
                 case 3:                                         // Both Chance tiles grouped together
                 case 13: chance(p1, p2); break;
                 case 8:                                         // Both Community Chest tiles grouped together
@@ -288,6 +323,17 @@ namespace Minipoly
                             break;
                         }
                         player.buyProp(prop);
+                        for (int i = 0; i < 4; i++)
+                        {
+                            if (player.propsowned[i] == 3 && !player.monopOwned[i])
+                            {
+                                Console.WriteLine("{0} now owns all 3 {1} tiles! Their rent is now doubled.", player.name, prop.color);
+                                Monopoly[i, 0].rent *= 2;
+                                Monopoly[i, 1].rent *= 2;
+                                Monopoly[i, 2].rent *= 2;
+                                player.monopOwned[i] = true;
+                            }
+                        }
                         break;
                     case 'N':
                     case 'n':
@@ -304,6 +350,44 @@ namespace Minipoly
                 Console.WriteLine("{0} must pay {1} ${2} in rent.", player.name, other.name, prop.rent);
                 player.setMoney(-prop.rent);
                 other.setMoney(prop.rent);
+            }
+        }
+
+        static void listProps(Player player)
+        {
+            Console.WriteLine("{0} has ${1} and owns: ", player.name, player.money);
+            for (int i = 0; i < 4; i++)
+            {
+                for (int j = 0; j < 3; j++)
+                {
+                    if (Monopoly[i,j].owner == player.name)
+                    {
+                        Console.Write("{0} ({1}) ", Monopoly[i, j].name, Monopoly[i, j].color);
+                    }
+                }
+                Console.WriteLine();
+            }
+        }
+
+        static void buyHouse(Player player)
+        {
+            if (!player.monopoly())
+            {
+                Console.WriteLine("You don't have any monopolies, so you can't buy any houses.");
+            }
+            else
+            {
+                for (int i = 0; i < 4; i++)             // Goes through each set of colors and checks to see if the player owns that monopoly
+                {
+                    if (Monopoly[i, 0].owner == player.name && Monopoly[i, 1].owner == player.name && Monopoly[i, 2].owner == player.name)
+                    {
+                        int choice = 0;
+                        Console.WriteLine("Which {0} property do you want to build a house on: {1}, {2}, or {3}? (1, 2, or 3)",
+                            Monopoly[i, 0].color, Monopoly[i, 0].name, Monopoly[i, 1].name, Monopoly[i, 2].name);
+                        choice = int.Parse(Console.ReadLine());
+                        Monopoly[i, choice - 1].buildHouse(player);
+                    }
+                }
             }
         }
 
