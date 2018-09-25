@@ -429,6 +429,10 @@ namespace Minipoly
                     player.goToJail();
                     break;
                 case 5: Console.WriteLine("Pay $25 for each house you own and $100 for each hotel you own.");
+                    if (player.houses == 0)
+                        Console.WriteLine("You do not own any houses.");
+                    else
+                        player.setMoney(-25 * player.houses + -100 * player.hotels);
                     break;
                 case 6: Console.WriteLine("Advance to Atlantic Avenue. If you pass Go, collect $100.");
                     player.goTo(11);
