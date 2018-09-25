@@ -1,4 +1,7 @@
-﻿using System;
+﻿// Ben Martin
+
+
+using System;
 
 namespace Minipoly
 {
@@ -22,18 +25,18 @@ namespace Minipoly
         
         public void buildHouse(Player player)
         {
-            if (numhouses == 5)
-                Console.WriteLine("You have already built 4 houses and a Hotel, you cannot build any more.");
-            else if (player.money < housePrice)
+            if (numhouses == 5)     // Will not let player build more than 4 houses and a hotel
+                Console.WriteLine("You have already built 4 houses and a Hotel here, you cannot build any more.");
+            else if (player.money < housePrice)     // Will not let player buy houses if they don't have enough money
                 Console.WriteLine("You don't have enough money.");
             else
             {
-                player.setMoney(-housePrice);
-                switch(numhouses)
+                player.setMoney(-housePrice);       // Player pays for the house and updates the rent depending on which house they buy
+                switch(numhouses)               // I had to assess for myself what would be a balanced amount for rent increases. Normal Monopoly has these values a bit higher, but I scaled them down for Minipoly
                 {
-                    case 0: rent *= 2; player.houses++;  break;       // First House - Rent increases by 3x
+                    case 0: rent *= 3; player.houses++;  break;       // First House - Rent increases by 3x
                     case 1: rent *= 2; player.houses++; break;       // Second House - Rent increases by 2x
-                    case 2: rent *= 3; player.houses++; break;       // Third House - Rent increases by 2x
+                    case 2: rent *= 2; player.houses++; break;       // Third House - Rent increases by 2x
                     case 3: rent = rent * 3 / 2; player.houses++; break;   // Fourth House - Rent increases by 1.5x
                     case 4: rent *= 2; player.hotels++; break;       // Hotel - Rent increases by 2x
                     default: break;
@@ -67,19 +70,17 @@ namespace Minipoly
             outofjailfree = false;
         }
 
-        // Getters: Return players money, position, and name
-
-        public void passGo()        // Prints out that player passed Go, adds $200 to money
+        public void passGo()            // Prints out that player passed Go, adds $200 to money
         {
             money += 100;
             Console.WriteLine("{0} passed Go! {0} now has ${1}.", name, money);
         }
 
-        public void setMoney(int x)
+        public void setMoney(int x)     // Updates player's money and prints out their new amount
         {
             money += x;
             Console.WriteLine("{0} now has ${1}.", name, money);
-        }   // Updates player money
+        }   
 
         public void setPosition(int x)      // Updates position and wraps around when passing Go
         {
@@ -114,7 +115,7 @@ namespace Minipoly
             }
         }
 
-        public void buyProp(Property prop)
+        public void buyProp(Property prop)  // Buys the property player landed on
         {
             Console.WriteLine("{0} now owns {1}!", name, prop.name);
             prop.owner = name;
@@ -201,7 +202,6 @@ namespace Minipoly
 
             while (!gameover)       // Game will keep playing until one player is bankrupt
             {
-
                 Console.WriteLine();
                 roll(p1, p2);           // Calls roll function
                 if (p1.money <= 0)
@@ -296,14 +296,14 @@ namespace Minipoly
                 Console.WriteLine("{0} rolled a {1} and was unable to get out of jail.", player.name, die);
             }
 
-            if (player.jailcounter == 3)
+            if (player.jailcounter == 3)    // After Player has rolled 3 times in jail, they pay $50 and roll as normal. 
             {
                 player.injail = false;
                 player.setPosition(die);
                 player.jailcounter = 0;
                 Console.Write("{0} paid $50 to get out of Jail. ", player.name);
                 player.setMoney(-50);
-                freeparking += 50;
+                freeparking += 50;          // Jail money goes to Free Parking
                 Console.WriteLine("{0} rolled a {1} and landed on {2}.", player.name, die, tile[player.position]);
             }
         }
@@ -323,8 +323,8 @@ namespace Minipoly
                             Console.WriteLine("You do not have enough money.");
                             break;
                         }
-                        player.buyProp(prop);
-                        for (int i = 0; i < 4; i++)
+                        player.buyProp(prop);       // Passes on to function that handles buying properties
+                        for (int i = 0; i < 4; i++) // Checks to see if player owns all 3 of a color. If they do, it doubles the rent.
                         {
                             if (player.propsowned[i] == 3 && !player.monopOwned[i])
                             {
@@ -332,7 +332,7 @@ namespace Minipoly
                                 Monopoly[i, 0].rent *= 2;
                                 Monopoly[i, 1].rent *= 2;
                                 Monopoly[i, 2].rent *= 2;
-                                player.monopOwned[i] = true;
+                                player.monopOwned[i] = true;        // This boolean array is to make sure the rent doesn't double every time this function is called
                             }
                         }
                         break;
@@ -354,7 +354,7 @@ namespace Minipoly
             }
         }
 
-        static void listProps(Player player)
+        static void listProps(Player player)        // Prints out the Player's money and properties they own, along with its color
         {
             Console.WriteLine("{0} has ${1} and owns: ", player.name, player.money);
             for (int i = 0; i < 4; i++)
@@ -370,9 +370,9 @@ namespace Minipoly
             }
         }
 
-        static void buyHouse(Player player)
+        static void buyHouse(Player player) 
         {
-            if (!player.monopoly())
+            if (!player.monopoly())     // Doesn't let player buy houses unless they have a monopoly
             {
                 Console.WriteLine("You don't have any monopolies, so you can't buy any houses.");
             }
@@ -386,14 +386,14 @@ namespace Minipoly
                         Console.WriteLine("Which {0} property do you want to build a house on: {1}, {2}, or {3}? (1, 2, 3, or 0 to skip)",
                             Monopoly[i, 0].color, Monopoly[i, 0].name, Monopoly[i, 1].name, Monopoly[i, 2].name);
                         choice = int.Parse(Console.ReadLine());
-                        if (choice != 0)
+                        if (choice != 0)                // If player inputs 0, skips this set of properties without having to buy a house
                             Monopoly[i, choice - 1].buildHouse(player);
                     }
                 }
             }
         }
 
-        static void tradeProp(Player p1, Player p2)
+        static void tradeProp(Player p1, Player p2)     // Function to trade properties between players
         {
             Console.WriteLine("{0}, what property will you offer? ", p1.name);
             int counter = 0;
