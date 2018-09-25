@@ -2,6 +2,7 @@
 
 
 using System;
+using System.Collections.Generic;
 
 namespace Minipoly
 {
@@ -55,8 +56,9 @@ namespace Minipoly
         public string name;
         public int money, position, jailcounter, houses, hotels;
         public bool injail, outofjailfree;
-        public int[] propsowned = { 0, 0, 0, 0 };
+        public int[] monopCounter = { 0, 0, 0, 0 };
         public bool[] monopOwned = { false, false, false, false };
+        public List<Property> propsOwned = new List<Property>();
 
         public Player(string x, int y)   // Constructor that receives name and starting money. Sets initial position to 0
         {
@@ -120,19 +122,20 @@ namespace Minipoly
             Console.WriteLine("{0} now owns {1}!", name, prop.name);
             prop.owner = name;
             setMoney(-prop.price);
+            propsOwned.Add(prop);
 
-            switch (prop.color)             // Updates propsowned array with a property. 0 is blues, 1 is yellows, 2 is reds, 3 is greens
+            switch (prop.color)             // Updates monopCounter array with a property. 0 is blues, 1 is yellows, 2 is reds, 3 is greens
             {
-                case "blue": propsowned[0]++; break;
-                case "yellow": propsowned[1]++; break;
-                case "red": propsowned[2]++; break;
-                case "green": propsowned[3]++; break;
+                case "blue": monopCounter[0]++; break;
+                case "yellow": monopCounter[1]++; break;
+                case "red": monopCounter[2]++; break;
+                case "green": monopCounter[3]++; break;
             }
         }
         
         public bool monopoly()          // Returns true if player has a monopoly, otherwise returns false
         {
-            foreach (int num in propsowned)
+            foreach (int num in monopCounter)
             {
                 if (num == 3)
                     return true;
@@ -230,7 +233,7 @@ namespace Minipoly
                 char choice = ' ';
                 while (choice != 'r' && choice != 'R')
                 { 
-                    Console.Write("{0}, would you like to roll, list properties & money, or buy houses? (r/p/h) ", p1.name);
+                    Console.Write("{0}: Roll | Inventory | Buy Houses | Trade | (r/i/h/t) ", p1.name);
                     choice = Convert.ToChar(Console.ReadLine());
                     switch (choice)
                     {
@@ -238,8 +241,10 @@ namespace Minipoly
                         case 'R': break;
                         case 'h':           // Buys a house on a property
                         case 'H': buyHouse(p1); break;
-                        case 'p':
-                        case 'P': listProps(p1); break;
+                        case 'i':
+                        case 'I': listProps(p1); break;
+                        case 't':
+                        case 'T': tradeProp(p1, p2); break;
                         default: Console.WriteLine("Error, invalid input."); break;
                     }
                 }
@@ -326,7 +331,7 @@ namespace Minipoly
                         player.buyProp(prop);       // Passes on to function that handles buying properties
                         for (int i = 0; i < 4; i++) // Checks to see if player owns all 3 of a color. If they do, it doubles the rent.
                         {
-                            if (player.propsowned[i] == 3 && !player.monopOwned[i])
+                            if (player.monopCounter[i] == 3 && !player.monopOwned[i])
                             {
                                 Console.WriteLine("{0} now owns all 3 {1} tiles! Their rent is now doubled.", player.name, prop.color);
                                 Monopoly[i, 0].rent *= 2;
@@ -368,6 +373,8 @@ namespace Minipoly
                 }
                 Console.WriteLine();
             }
+            if (player.outofjailfree)
+                Console.WriteLine("| Get Out Of Jail Free! |");
         }
 
         static void buyHouse(Player player) 
@@ -395,18 +402,108 @@ namespace Minipoly
 
         static void tradeProp(Player p1, Player p2)     // Function to trade properties between players
         {
-            Console.WriteLine("{0}, what property will you offer? ", p1.name);
-            int counter = 0;
-            for (int i = 0; i < 4; i++)
+            int choice = -1;
+            List<Property> p1offer = new List<Property>(), p2offer = new List<Property>();
+            int p1money = 0, p2money = 0;
+
+            Console.WriteLine("{0}, what property(s) will you offer? (0 to exit)", p1.name);
+            for (int i = 0; i < p1.propsOwned.Count; i++)
+                Console.WriteLine("{0}. {1} ({2})", i + 1, p1.propsOwned[i].name, p1.propsOwned[i].color);
+
+            while (choice != 0)             // Player 1 chooses properties to trade
             {
-                for (int j = 0; j < 3; j++)
-                {
-                    if (Monopoly[i, j].owner == p1.name)
+                choice = int.Parse(Console.ReadLine());
+                if (choice == 0) continue;
+                p1offer.Add(p1.propsOwned[choice - 1]);
+                Console.WriteLine("this while loop is still executing");
+            }
+            Console.Write("Will you offer any money? $");
+            p1money = int.Parse(Console.ReadLine());        // Player 1 offers money
+            choice = -1;
+
+            Console.WriteLine("{0}, what property will you offer? (0 to exit)", p2.name);
+            for (int i = 0; i < p2.propsOwned.Count; i++)
+                Console.WriteLine("{0}.) {1} ({2})", i + 1, p2.propsOwned[i].name, p2.propsOwned[i].color);
+
+            while (choice != 0)             // Player 2 chooses properties to trade
+            {
+                choice = int.Parse(Console.ReadLine());
+                if (choice == 0) continue;
+                p2offer.Add(p2.propsOwned[choice - 1]);
+            }
+            Console.Write("Will you offer any money? $");
+            p2money = int.Parse(Console.ReadLine());        // Player 2 offers money
+
+            char finalchoice;
+            Console.Write("Finalize the deal? (y/n) ");
+            finalchoice = char.Parse(Console.ReadLine());   // 'n' or any other input cancels the deal
+
+            switch (finalchoice)
+            {
+                case 'y':
+                case 'Y':
+                    string p1temp = "p1temp";       // These strings are used to avoid a bug where Player 1 gets 
+                    string p2temp = "p2temp";       // both properties since their deal is processed first.
+
+                    Console.Write("\n{0} now owns: ", p1.name);
+                    foreach (var prop in p2offer)   // Transfers properties from p1 to p2
                     {
-                        counter++;
-                        Console.Write("{2}.) {0} ({1})\n", Monopoly[i, j].name, Monopoly[i, j].color, counter);
+                        Console.WriteLine(prop.name);
+                        for (int i = 0; i < 4; i++)
+                        {
+                            for (int j = 0; j < 3; j++)
+                            {
+                                if (prop.owner == Monopoly[i, j].owner)
+                                {
+                                    Monopoly[i, j].owner = p1temp;      // Sets the property's name to the temporary string
+                                    p2.propsOwned.Remove(prop);         // Removes the property from the propsOwned list in the Player class
+                                }
+                            }
+                        }
                     }
-                }
+
+                    Console.Write("\n{0} now owns: ", p2.name);
+                    foreach (var prop in p1offer)   // Transfers properties from p2 to p1
+                    {
+                        Console.WriteLine(prop.name);
+                        for (int i = 0; i < 4; i++)
+                        {
+                            for (int j = 0; j < 3; j++)
+                            {
+                                if (prop.owner == Monopoly[i, j].owner)
+                                {
+                                    Monopoly[i, j].owner = p2temp;      // Sets the property's name to the temporary string
+                                    p1.propsOwned.Remove(prop);         // Removes the property from the propsOwned list in the Player class
+                                }
+                            }
+                        }
+                    }
+
+                    for (int i = 0; i < 4; i++)
+                    {
+                        for (int j = 0; j < 3; j++)
+                        {
+                            if (Monopoly[i, j].owner == p1temp)
+                            {
+                                Monopoly[i, j].owner = p1.name;         // Converts the property name from the temp string to the actual name
+                                p1.propsOwned.Add(Monopoly[i, j]);      // Adds the property to the propsOwned list in the Player class
+                            }
+
+                            if (Monopoly[i, j].owner == p2temp)
+                            {
+                                Monopoly[i, j].owner = p2.name;         // Converts the property name from the temp string to the actual name
+                                p2.propsOwned.Add(Monopoly[i, j]);      // Adds the property to the propsOwned list in the Player class
+                            }
+                        }
+                    }
+
+                    p1.setMoney(p2money - p1money);         // Trades money between players. Functions are called this way (p1 - p2)
+                    p2.setMoney(p1money - p2money);         // to avoid 2 extra print statements that give no valuable info.
+
+                    break;
+                case 'n':
+                case 'N':
+                default: Console.WriteLine("Deal Cancelled."); break;
             }
         }
 
@@ -428,11 +525,11 @@ namespace Minipoly
                 case 4: Console.WriteLine("Go directly to Jail. Do not pass Go, do not collect $100.");
                     player.goToJail();
                     break;
-                case 5: Console.WriteLine("Pay $25 for each house you own and $100 for each hotel you own.");
+                case 5: Console.WriteLine("Pay $20 for each house you own and $50 for each hotel you own.");
                     if (player.houses == 0)
                         Console.WriteLine("You do not own any houses.");
                     else
-                        player.setMoney(-25 * player.houses + -100 * player.hotels);
+                        player.setMoney(-20 * player.houses + -50 * player.hotels);
                     break;
                 case 6: Console.WriteLine("Advance to Atlantic Avenue. If you pass Go, collect $100.");
                     player.goTo(11);
