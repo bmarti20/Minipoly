@@ -1,5 +1,5 @@
 ﻿// Ben Martin
-
+// Mini-opoly
 
 using System;
 using System.Collections.Generic;
@@ -245,6 +245,7 @@ namespace Minipoly
                         case 'I': listProps(p1); break;
                         case 't':
                         case 'T': tradeProp(p1, p2); break;
+                        case 'a': listAllProps(); break;
                         default: Console.WriteLine("Error, invalid input."); break;
                     }
                 }
@@ -415,7 +416,6 @@ namespace Minipoly
                 choice = int.Parse(Console.ReadLine());
                 if (choice == 0) continue;
                 p1offer.Add(p1.propsOwned[choice - 1]);
-                Console.WriteLine("this while loop is still executing");
             }
             Console.Write("Will you offer any money? $");
             p1money = int.Parse(Console.ReadLine());        // Player 1 offers money
@@ -423,7 +423,7 @@ namespace Minipoly
 
             Console.WriteLine("{0}, what property will you offer? (0 to exit)", p2.name);
             for (int i = 0; i < p2.propsOwned.Count; i++)
-                Console.WriteLine("{0}.) {1} ({2})", i + 1, p2.propsOwned[i].name, p2.propsOwned[i].color);
+                Console.WriteLine("{0}. {1} ({2})", i + 1, p2.propsOwned[i].name, p2.propsOwned[i].color);
 
             while (choice != 0)             // Player 2 chooses properties to trade
             {
@@ -445,7 +445,7 @@ namespace Minipoly
                     string p1temp = "p1temp";       // These strings are used to avoid a bug where Player 1 gets 
                     string p2temp = "p2temp";       // both properties since their deal is processed first.
 
-                    Console.Write("\n{0} now owns: ", p1.name);
+                    Console.WriteLine("{0} now owns: ", p1.name);
                     foreach (var prop in p2offer)   // Transfers properties from p1 to p2
                     {
                         Console.WriteLine(prop.name);
@@ -453,7 +453,7 @@ namespace Minipoly
                         {
                             for (int j = 0; j < 3; j++)
                             {
-                                if (prop.owner == Monopoly[i, j].owner)
+                                if (prop.name == Monopoly[i, j].name)
                                 {
                                     Monopoly[i, j].owner = p1temp;      // Sets the property's name to the temporary string
                                     p2.propsOwned.Remove(prop);         // Removes the property from the propsOwned list in the Player class
@@ -462,7 +462,7 @@ namespace Minipoly
                         }
                     }
 
-                    Console.Write("\n{0} now owns: ", p2.name);
+                    Console.WriteLine("{0} now owns: ", p2.name);
                     foreach (var prop in p1offer)   // Transfers properties from p2 to p1
                     {
                         Console.WriteLine(prop.name);
@@ -470,7 +470,7 @@ namespace Minipoly
                         {
                             for (int j = 0; j < 3; j++)
                             {
-                                if (prop.owner == Monopoly[i, j].owner)
+                                if (prop.name == Monopoly[i, j].name)
                                 {
                                     Monopoly[i, j].owner = p2temp;      // Sets the property's name to the temporary string
                                     p1.propsOwned.Remove(prop);         // Removes the property from the propsOwned list in the Player class
@@ -499,11 +499,23 @@ namespace Minipoly
 
                     p1.setMoney(p2money - p1money);         // Trades money between players. Functions are called this way (p1 - p2)
                     p2.setMoney(p1money - p2money);         // to avoid 2 extra print statements that give no valuable info.
+                    Console.WriteLine();
 
                     break;
                 case 'n':
                 case 'N':
                 default: Console.WriteLine("Deal Cancelled."); break;
+            }
+        }
+
+        static void listAllProps()
+        {
+            for (int i = 0; i < 4; i++)
+            {
+                for (int j = 0; j < 3; j++)
+                {
+                    Console.WriteLine(Monopoly[i, j].name + " - " + Monopoly[i, j].owner);
+                }
             }
         }
 
@@ -593,6 +605,5 @@ namespace Minipoly
                 freeparking = 0;
             }
         }
-        
     }
 }
