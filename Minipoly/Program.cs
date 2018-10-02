@@ -44,9 +44,15 @@ namespace Minipoly
                 }
                 numhouses++;
                 if (numhouses == 5)
+                {
                     Console.WriteLine("You built a hotel on {0}! Rent is now ${1}.", name, rent);
+                    name += " *";
+                }
                 else
+                {
                     Console.WriteLine("You built a house on {0}! Rent is now ${1}.", name, rent);
+                    name += " +";
+                }
             }
         }
     }
@@ -74,7 +80,7 @@ namespace Minipoly
 
         public void passGo()            // Prints out that player passed Go, adds $200 to money
         {
-            money += 100;
+            money += 200;
             Console.WriteLine("{0} passed Go! {0} now has ${1}.", name, money);
         }
 
@@ -123,18 +129,20 @@ namespace Minipoly
             prop.owner = name;
             setMoney(-prop.price);
             propsOwned.Add(prop);
-
-            switch (prop.color)             // Updates monopCounter array with a property. 0 is blues, 1 is yellows, 2 is reds, 3 is greens
-            {
-                case "blue": monopCounter[0]++; break;
-                case "yellow": monopCounter[1]++; break;
-                case "red": monopCounter[2]++; break;
-                case "green": monopCounter[3]++; break;
-            }
         }
         
         public bool monopoly()          // Returns true if player has a monopoly, otherwise returns false
         {
+            foreach (Property prop in propsOwned)
+            {
+                switch (prop.color)             // Updates monopCounter array with a property. 0 is blues, 1 is yellows, 2 is reds, 3 is greens
+                {
+                    case "blue": monopCounter[0]++; break;
+                    case "yellow": monopCounter[1]++; break;
+                    case "red": monopCounter[2]++; break;
+                    case "green": monopCounter[3]++; break;
+                }
+            }
             foreach (int num in monopCounter)
             {
                 if (num == 3)
@@ -149,7 +157,8 @@ namespace Minipoly
     class Program
     {
         // Money players start the game with
-        const int STARTMONEY = 800;
+        const int STARTMONEY = 1000;
+
         // All tile names
         public static String[] tile = { "Go!", "Oriental Avenue", "Vermont Avenue",  "Chance",  "Connecticut Avenue",
             "Jail",  "St. James Place",  "Tennessee Avenue",  "Community Chest",  "New York Avenue",  "Free Parking",
@@ -250,7 +259,6 @@ namespace Minipoly
                     }
                 }
             
-
                 Console.WriteLine("{0} rolls!", p1.name);
                 Random rnd = new Random();
                 int die = rnd.Next(1, 7);       // Generates a random dice roll and updates the player's position
@@ -279,6 +287,18 @@ namespace Minipoly
                 case 15: p1.goToJail(); break;             // Go to Jail tile sends player to Jail
                 case 10: parking(p1); break;               // Player lands on Free Parking and collects the money there
                 default: break;
+            }
+
+            for (int i = 0; i < 4; i++) // Checks to see if player owns all 3 of a color. If they do, it doubles the rent.
+            {
+                if (p1.monopCounter[i] == 3 && !p1.monopOwned[i])
+                {
+                    Console.WriteLine("{0} now owns all 3 {1} tiles! Their rent is now doubled.", p1.name, Monopoly[i,0].color);
+                    Monopoly[i, 0].rent *= 2;
+                    Monopoly[i, 1].rent *= 2;
+                    Monopoly[i, 2].rent *= 2;
+                    p1.monopOwned[i] = true;        // This boolean array is to make sure the rent doesn't double every time this function is called
+                }
             }
             Console.ReadKey();          // Waits for user to press Enter before continuing
             
@@ -330,17 +350,6 @@ namespace Minipoly
                             break;
                         }
                         player.buyProp(prop);       // Passes on to function that handles buying properties
-                        for (int i = 0; i < 4; i++) // Checks to see if player owns all 3 of a color. If they do, it doubles the rent.
-                        {
-                            if (player.monopCounter[i] == 3 && !player.monopOwned[i])
-                            {
-                                Console.WriteLine("{0} now owns all 3 {1} tiles! Their rent is now doubled.", player.name, prop.color);
-                                Monopoly[i, 0].rent *= 2;
-                                Monopoly[i, 1].rent *= 2;
-                                Monopoly[i, 2].rent *= 2;
-                                player.monopOwned[i] = true;        // This boolean array is to make sure the rent doesn't double every time this function is called
-                            }
-                        }
                         break;
                     case 'N':
                     case 'n':
@@ -437,6 +446,7 @@ namespace Minipoly
             char finalchoice;
             Console.Write("Finalize the deal? (y/n) ");
             finalchoice = char.Parse(Console.ReadLine());   // 'n' or any other input cancels the deal
+            Console.WriteLine();
 
             switch (finalchoice)
             {
@@ -534,7 +544,7 @@ namespace Minipoly
                 case 3: Console.WriteLine("Get out of Jail Free!");
                     player.outofjailfree = true;
                     break;
-                case 4: Console.WriteLine("Go directly to Jail. Do not pass Go, do not collect $100.");
+                case 4: Console.WriteLine("Go directly to Jail. Do not pass Go, do not collect $200.");
                     player.goToJail();
                     break;
                 case 5: Console.WriteLine("Pay $20 for each house you own and $50 for each hotel you own.");
@@ -543,11 +553,11 @@ namespace Minipoly
                     else
                         player.setMoney(-20 * player.houses + -50 * player.hotels);
                     break;
-                case 6: Console.WriteLine("Advance to Atlantic Avenue. If you pass Go, collect $100.");
+                case 6: Console.WriteLine("Advance to Atlantic Avenue. If you pass Go, collect $200.");
                     player.goTo(11);
                     propLand(player, other, atlantic);
                     break;
-                case 7: Console.WriteLine("Advance to Connecticut Avenue. If you pass Go, collect $100.");
+                case 7: Console.WriteLine("Advance to Connecticut Avenue. If you pass Go, collect $200.");
                     player.goTo(4);
                     propLand(player, other, connecticut);
                     break;
@@ -570,7 +580,7 @@ namespace Minipoly
                 case 2: Console.WriteLine("Get out of Jail Free!");
                     player.outofjailfree = true;
                     break;
-                case 3: Console.WriteLine("Go directly to Jail. Do not pass Go, do not collect $100.");
+                case 3: Console.WriteLine("Go directly to Jail. Do not pass Go, do not collect $200.");
                     player.goToJail();
                     break;
                 case 4: Console.WriteLine("Pay $50 in doctor's fees");
@@ -584,11 +594,11 @@ namespace Minipoly
                     player.goTo(19);
                     propLand(player, other, pennsylvania);
                     break;
-                case 7: Console.WriteLine("Advance to New York Avenue. If you pass Go, collect $100.");
+                case 7: Console.WriteLine("Advance to New York Avenue. If you pass Go, collect $200.");
                     player.goTo(9);
                     propLand(player, other, newyork);
                     break;
-                case 8: Console.WriteLine("Advance to Pacific Avenue. If you pass Go, collect $100.");
+                case 8: Console.WriteLine("Advance to Pacific Avenue. If you pass Go, collect $200.");
                     player.goTo(16);
                     propLand(player, other, pacific);
                     break;
