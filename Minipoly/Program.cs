@@ -46,12 +46,12 @@ namespace Minipoly
                 if (numhouses == 5)
                 {
                     Console.WriteLine("You built a hotel on {0}! Rent is now ${1}.", name, rent);
-                    name += " *";
+                    name += "*";
                 }
                 else
                 {
                     Console.WriteLine("You built a house on {0}! Rent is now ${1}.", name, rent);
-                    name += " +";
+                    name += "+";
                 }
             }
         }
@@ -132,27 +132,14 @@ namespace Minipoly
             propsOwned.Add(prop);
             switch (prop.color)
             {
-                case "blue":
-                    monopCounter[0]++;
-                    if (monopCounter[0] == 3) monopOwned[0] = true;
-                    break;
-                case "yellow":
-                    monopCounter[1]++;
-                    if (monopCounter[1] == 3) monopOwned[1] = true;
-                    break;
-                case "red":
-                    monopCounter[2]++;
-                    if (monopCounter[2] == 3) monopOwned[2] = true;
-                    break;
-                case "green":
-                    monopCounter[3]++;
-                    if (monopCounter[3] == 3) monopOwned[3] = true;
-                    break;
+                case "blue":   monopCounter[0]++; break;
+                case "yellow": monopCounter[1]++; break;
+                case "red":    monopCounter[2]++; break;
+                case "green":  monopCounter[3]++; break;
                 default: break;
             }
         }
     }
-
 
 
     class Program
@@ -329,7 +316,7 @@ namespace Minipoly
         {
             for (int i = 0; i < 4; i++) // Checks to see if player owns all 3 of a color. If they do, it doubles the rent.
             {
-                if (p1.monopOwned[i])
+                if (p1.monopCounter[i] == 3 && !p1.monopOwned[i])
                 {
                     Console.WriteLine("{0} now owns all 3 {1} tiles! Their rent is now doubled.", p1.name, Monopoly[i, 0].color);
                     Monopoly[i, 0].rent *= 2;
@@ -396,7 +383,7 @@ namespace Minipoly
 
         static void buyHouse(Player player) 
         {
-            if (!p1.canbuyhouses)     // Doesn't let player buy houses unless they have a monopoly
+            if (!player.canbuyhouses)     // Doesn't let player buy houses unless they have a monopoly
             {
                 Console.WriteLine("You don't have any monopolies, so you can't buy any houses.");
             }
@@ -410,8 +397,12 @@ namespace Minipoly
                         Console.WriteLine("Which {0} property do you want to build a house on: {1}, {2}, or {3}? (1, 2, 3, or 0 to skip)",
                             Monopoly[i, 0].color, Monopoly[i, 0].name, Monopoly[i, 1].name, Monopoly[i, 2].name);
                         choice = int.Parse(Console.ReadLine());
-                        if (choice != 0)                // If player inputs 0, skips this set of properties without having to buy a house
+                        while (choice != 0)
+                        {
                             Monopoly[i, choice - 1].buildHouse(player);
+                            Console.Write("Build another house? (1, 2, 3, 0 to exit) ");
+                            choice = int.Parse(Console.ReadLine());
+                        }
                     }
                 }
             }
@@ -505,7 +496,6 @@ namespace Minipoly
                                 Monopoly[i, j].owner = p1.name;         // Converts the property name from the temp string to the actual name
                                 p1.propsOwned.Add(Monopoly[i, j]);      // Adds the property to the propsOwned list in the Player class
                                 p1.monopCounter[i]++;
-                                if (p1.monopCounter[i] == 3) p1.monopOwned[i] = true;   // Reduced version of code in buyProp function in Player class, allows monopCheck to properly work
                             }
 
                             if (Monopoly[i, j].owner == p2temp)
@@ -513,7 +503,6 @@ namespace Minipoly
                                 Monopoly[i, j].owner = p2.name;         // Converts the property name from the temp string to the actual name
                                 p2.propsOwned.Add(Monopoly[i, j]);      // Adds the property to the propsOwned list in the Player class
                                 p2.monopCounter[i]++;
-                                if (p2.monopCounter[i] == 3) p2.monopOwned[i] = true;
                             }
                         }
                     }
