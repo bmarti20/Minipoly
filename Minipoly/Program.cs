@@ -61,7 +61,7 @@ namespace Minipoly
     {
         public string name;
         public int money, position, jailcounter, houses, hotels;
-        public bool injail, outofjailfree;
+        public bool injail, outofjailfree, canbuyhouses;
         public int[] monopCounter = { 0, 0, 0, 0 };
         public bool[] monopOwned = { false, false, false, false };
         public List<Property> propsOwned = new List<Property>();
@@ -76,6 +76,7 @@ namespace Minipoly
             hotels = 0;
             injail = false;
             outofjailfree = false;
+            canbuyhouses = false;
         }
 
         public void passGo()            // Prints out that player passed Go, adds $200 to money
@@ -129,26 +130,26 @@ namespace Minipoly
             prop.owner = name;
             setMoney(-prop.price);
             propsOwned.Add(prop);
-        }
-        
-        public bool monopoly()          // Returns true if player has a monopoly, otherwise returns false
-        {
-            foreach (Property prop in propsOwned)
+            switch (prop.color)
             {
-                switch (prop.color)             // Updates monopCounter array with a property. 0 is blues, 1 is yellows, 2 is reds, 3 is greens
-                {
-                    case "blue": monopCounter[0]++; break;
-                    case "yellow": monopCounter[1]++; break;
-                    case "red": monopCounter[2]++; break;
-                    case "green": monopCounter[3]++; break;
-                }
+                case "blue":
+                    monopCounter[0]++;
+                    if (monopCounter[0] == 3) monopOwned[0] = true;
+                    break;
+                case "yellow":
+                    monopCounter[1]++;
+                    if (monopCounter[1] == 3) monopOwned[1] = true;
+                    break;
+                case "red":
+                    monopCounter[2]++;
+                    if (monopCounter[2] == 3) monopOwned[2] = true;
+                    break;
+                case "green":
+                    monopCounter[3]++;
+                    if (monopCounter[3] == 3) monopOwned[3] = true;
+                    break;
+                default: break;
             }
-            foreach (int num in monopCounter)
-            {
-                if (num == 3)
-                    return true;
-            }
-            return false;
         }
     }
 
@@ -288,18 +289,8 @@ namespace Minipoly
                 case 10: parking(p1); break;               // Player lands on Free Parking and collects the money there
                 default: break;
             }
-
-            for (int i = 0; i < 4; i++) // Checks to see if player owns all 3 of a color. If they do, it doubles the rent.
-            {
-                if (p1.monopCounter[i] == 3 && !p1.monopOwned[i])
-                {
-                    Console.WriteLine("{0} now owns all 3 {1} tiles! Their rent is now doubled.", p1.name, Monopoly[i,0].color);
-                    Monopoly[i, 0].rent *= 2;
-                    Monopoly[i, 1].rent *= 2;
-                    Monopoly[i, 2].rent *= 2;
-                    p1.monopOwned[i] = true;        // This boolean array is to make sure the rent doesn't double every time this function is called
-                }
-            }
+            monopCheck(p1);             // Calls monopCheck for both players to see if either one got a monopoly this turn
+            monopCheck(p2);
             Console.ReadKey();          // Waits for user to press Enter before continuing
             
         }
@@ -331,6 +322,22 @@ namespace Minipoly
                 player.setMoney(-50);
                 freeparking += 50;          // Jail money goes to Free Parking
                 Console.WriteLine("{0} rolled a {1} and landed on {2}.", player.name, die, tile[player.position]);
+            }
+        }
+
+        static void monopCheck(Player p1)       // Function devoted to checking owned properties, called at the end of the roll function
+        {
+            for (int i = 0; i < 4; i++) // Checks to see if player owns all 3 of a color. If they do, it doubles the rent.
+            {
+                if (p1.monopOwned[i])
+                {
+                    Console.WriteLine("{0} now owns all 3 {1} tiles! Their rent is now doubled.", p1.name, Monopoly[i, 0].color);
+                    Monopoly[i, 0].rent *= 2;
+                    Monopoly[i, 1].rent *= 2;
+                    Monopoly[i, 2].rent *= 2;
+                    p1.monopOwned[i] = true;        // This boolean array is to make sure the rent doesn't double every time this function is called
+                    p1.canbuyhouses = true;
+                }
             }
         }
 
@@ -389,7 +396,7 @@ namespace Minipoly
 
         static void buyHouse(Player player) 
         {
-            if (!player.monopoly())     // Doesn't let player buy houses unless they have a monopoly
+            if (!p1.canbuyhouses)     // Doesn't let player buy houses unless they have a monopoly
             {
                 Console.WriteLine("You don't have any monopolies, so you can't buy any houses.");
             }
@@ -497,18 +504,24 @@ namespace Minipoly
                             {
                                 Monopoly[i, j].owner = p1.name;         // Converts the property name from the temp string to the actual name
                                 p1.propsOwned.Add(Monopoly[i, j]);      // Adds the property to the propsOwned list in the Player class
+                                p1.monopCounter[i]++;
+                                if (p1.monopCounter[i] == 3) p1.monopOwned[i] = true;   // Reduced version of code in buyProp function in Player class, allows monopCheck to properly work
                             }
 
                             if (Monopoly[i, j].owner == p2temp)
                             {
                                 Monopoly[i, j].owner = p2.name;         // Converts the property name from the temp string to the actual name
                                 p2.propsOwned.Add(Monopoly[i, j]);      // Adds the property to the propsOwned list in the Player class
+                                p2.monopCounter[i]++;
+                                if (p2.monopCounter[i] == 3) p2.monopOwned[i] = true;
                             }
                         }
                     }
 
                     p1.setMoney(p2money - p1money);         // Trades money between players. Functions are called this way (p1 - p2)
                     p2.setMoney(p1money - p2money);         // to avoid 2 extra print statements that give no valuable info.
+                    monopCheck(p1);         // monopCheck is called here to make sure rent is updated correctly and player can buy houses 
+                    monopCheck(p2);         // on the same turn that they get a monopoly through a trade (theoretically)
                     Console.WriteLine();
 
                     break;
@@ -520,13 +533,15 @@ namespace Minipoly
 
         static void listAllProps()
         {
+            Console.WriteLine("\nProperty Name\t\tOwner\t\tRent\n");
             for (int i = 0; i < 4; i++)
             {
                 for (int j = 0; j < 3; j++)
                 {
-                    Console.WriteLine(Monopoly[i, j].name + " - " + Monopoly[i, j].owner);
+                    Console.WriteLine("{0, -23} {1, -15} ${2}", Monopoly[i, j].name, Monopoly[i, j].owner, Monopoly[i,j].rent);
                 }
             }
+            Console.WriteLine();
         }
 
         static void chance(Player player, Player other)     // Contains all the chance cards and selects them randomly. Needs both p1 and p2 for Property cards
