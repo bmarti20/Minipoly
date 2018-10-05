@@ -183,16 +183,46 @@ namespace Minipoly
             Monopoly[3, 0] = pacific; Monopoly[3, 1] = carolina; Monopoly[3, 2] = pennsylvania;     // Green Properties
 
             Console.WriteLine("Welcome to Mini-opoly!");
+            Console.Write("Press 'r' to show rules, or 's' to start the game! ");
+            char choice = char.Parse(Console.ReadLine());
+            while (choice != 's' && choice != 'S')
+            {
+                switch (choice)
+                {
+                    case 's':
+                    case 'S': break;        // Breaks the loop and starts the game
+                    case 'r':
+                    case 'R':
+                        showrules();        // Calls function that displays rules from a file
+                        Console.Write("Press 'r' to show rules, or 's' to start the game! ");
+                        choice = char.Parse(Console.ReadLine());
+                        break;
+                    default:
+                        Console.WriteLine("Error, invalid input.");
+                        Console.Write("Press 'r' to show rules, or 's' to start the game! ");
+                        choice = char.Parse(Console.ReadLine());
+                        break;
+                }
+            }
             Console.Write("Please enter Player 1 name: ");
             p1.name = Console.ReadLine();
             Console.WriteLine("{0} has ${1}", p1.name, p1.money);
             Console.Write("Please enter Player 2 name: ");
             p2.name = Console.ReadLine();
             Console.WriteLine("{0} has ${1}", p2.name, p2.money);
-            Console.WriteLine("Press Enter to start the game!");
             Console.ReadKey();
 
             play(p1, p2);           // Calls the play function and starts the game
+            Console.ReadKey();
+        }
+
+        static void showrules()
+        {
+            string[] lines = System.IO.File.ReadAllLines("Mini-opoly Rules.txt");
+            foreach (string line in lines)
+            {
+                Console.WriteLine(line);
+            }
             Console.ReadKey();
         }
 
