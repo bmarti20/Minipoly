@@ -11,6 +11,7 @@ namespace Minipoly
         public string name;
         public int price, rent, housePrice, position, numhouses;
         public string owner, color;
+        public bool mortgaged;
 
         public Property(string str, int x, int y, int z, int pos, string col)   // Constructor gets name, price, rent, house price, and position of properties. 
         {
@@ -22,6 +23,7 @@ namespace Minipoly
             owner = "Unowned";
             color = col;
             numhouses = 0;
+            mortgaged = false;
         }
         
         public void buildHouse(Player player)
@@ -215,7 +217,7 @@ namespace Minipoly
             play(p1, p2);           // Calls the play function and starts the game
             Console.ReadKey();
         }
-
+          
         static void showrules()
         {
             string[] lines = System.IO.File.ReadAllLines("Mini-opoly Rules.txt");
@@ -260,7 +262,7 @@ namespace Minipoly
                 char choice = ' ';
                 while (choice != 'r' && choice != 'R')
                 { 
-                    Console.Write("{0}: Roll | Inventory | Buy Houses | Trade | (r/i/h/t) ", p1.name);
+                    Console.Write("{0}: Roll | Inventory | Buy Houses | Trade | Mortgage | (r/i/h/t/m) ", p1.name);
                     choice = Convert.ToChar(Console.ReadLine());
                     switch (choice)
                     {
@@ -272,6 +274,12 @@ namespace Minipoly
                         case 'I': listProps(p1); break;
                         case 't':
                         case 'T': tradeProp(p1, p2); break;
+                        case 'm':
+                        case 'M': Console.Write("Do you want to mortgage or unmortgage properties? (m/u) ");
+                            choice = Convert.ToChar(Console.ReadLine());
+                            if (choice == 'm') mortgage(p1);
+                            else if (choice == 'u') unmortgage(p1);
+                            else Console.WriteLine("Error, invalid input."); break;
                         case 'a': listAllProps(); break;
                         default: Console.WriteLine("Error, invalid input."); break;
                     }
@@ -387,9 +395,14 @@ namespace Minipoly
             }
             else if (prop.owner == other.name)              // Pays rent to owner of property landed on
             {
-                Console.WriteLine("{0} must pay {1} ${2} in rent.", player.name, other.name, prop.rent);
-                player.setMoney(-prop.rent);
-                other.setMoney(prop.rent);
+                if (prop.mortgaged == true)
+                    Console.WriteLine("This property has been mortgaged, so {0} does not have to pay rent.", player.name);
+                else
+                {
+                    Console.WriteLine("{0} must pay {1} ${2} in rent.", player.name, other.name, prop.rent);
+                    player.setMoney(-prop.rent);
+                    other.setMoney(prop.rent);
+                }
             }
         }
 
@@ -435,6 +448,74 @@ namespace Minipoly
                         }
                     }
                 }
+            }
+        }
+
+        static void mortgage(Player p1)             // Function that allows player to mortgage properties in exchange for money
+        {
+            List<Property> p1props = new List<Property>(), p1choice = new List<Property>();
+            int choice = -1;
+            for (int i = 0; i < p1.propsOwned.Count; i++)       // Assembles a list of all properties able to be mortgaged
+            {
+                if (p1.propsOwned[i].mortgaged == false)
+                    p1props.Add(p1.propsOwned[i]);
+            }
+            if (p1props.Count == 0)                 // If player has no properties to mortgage, will print this message
+                Console.WriteLine("There are no properties available for you to mortgage.");
+            else
+            {
+                Console.WriteLine("Properties available to mortgage:");
+                for (int i = 0; i < p1props.Count; i++)         // Prints out the properties owned by the player able to be mortgaged
+                    Console.WriteLine("{0}.) {1}", i + 1, p1props[i].name);
+
+                Console.WriteLine("Choose properties to mortgage, 0 to exit:");
+                while (choice != 0)             // Player 1 chooses properties to mortgage
+                {
+                    choice = int.Parse(Console.ReadLine());
+                    if (choice == 0) continue;
+                    p1choice.Add(p1props[choice - 1]);
+                }
+
+                foreach (Property p in p1choice)    // Mortgages all chosen properties, pays player half the price of their cost
+                {
+                    p.mortgaged = true;
+                    p1.money += (p.price / 2);
+                }
+                Console.Write("{0} now has {1} for mortgaging their properties.", p1.name, p1.money);
+            }
+        }
+
+        static void unmortgage(Player p1)
+        {
+            List<Property> p1props = new List<Property>(), p1choice = new List<Property>();
+            int choice = -1;
+            for (int i = 0; i < p1.propsOwned.Count; i++)       // Assembles a list of all properties currently mortgaged
+            {
+                if (p1.propsOwned[i].mortgaged == true)
+                    p1props.Add(p1.propsOwned[i]);
+            }
+            if (p1props.Count == 0)                 // If player has no mortgaged properties, will print this message
+                Console.WriteLine("There are no properties you own that are currently mortgaged.");
+            else
+            {
+                Console.WriteLine("Mortgaged Properties:");
+                for (int i = 0; i < p1props.Count; i++)         // Prints out the properties owned by the player that are mortgaged
+                    Console.WriteLine("{0}.) {1}", i + 1, p1props[i].name);
+
+                Console.WriteLine("Choose properties to unmortgage, 0 to exit:");
+                while (choice != 0)             // Player 1 chooses properties to unmortgage
+                {
+                    choice = int.Parse(Console.ReadLine());
+                    if (choice == 0) continue;
+                    p1choice.Add(p1props[choice - 1]);
+                }
+
+                foreach (Property p in p1choice)    // Unmortgages all chosen properties, player pays half the price of their cost
+                {
+                    p.mortgaged = false;
+                    p1.money -= (p.price / 2);
+                }
+                Console.Write("{0} now has {1} after unmortgaging their properties.", p1.name, p1.money);
             }
         }
 
